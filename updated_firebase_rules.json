@@ -1,0 +1,53 @@
+{
+  "rules": {
+    "users": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && auth.uid == $uid",
+        "following": {
+          ".write": "auth != null",
+          "$followedId": {
+            ".write": "auth != null"
+          }
+        },
+        "followers": {
+          ".write": "auth != null",
+          "$followerId": {
+            ".write": "auth != null"
+          }
+        },
+        "notifications": {
+          ".read": "auth != null && auth.uid == $uid",
+          ".write": "auth != null"
+        },
+        "conversations": {
+          ".read": "auth != null && auth.uid == $uid",
+          ".write": "auth != null"
+        }
+      }
+    },
+    "posts": {
+      ".read": "auth != null",
+      ".indexOn": ["userId", "timestamp"],
+      "$postId": {
+        ".write": "auth != null && (!data.exists() || data.child('userId').val() == auth.uid)",
+        "likes": {
+          ".write": "auth != null"
+        },
+        "comments": {
+          ".write": "auth != null"
+        }
+      }
+    },
+    "messages": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "monthlyThemes": {
+      ".read": "auth != null",
+      "$monthYear": {
+        ".write": "auth != null"
+      }
+    }
+  }
+} 

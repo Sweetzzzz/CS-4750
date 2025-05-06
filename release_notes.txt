@@ -1,0 +1,29 @@
+Instagram Clone v2.0.0 - Release Notes
+
+🚀 Exciting News! Instagram Clone v2.0 is here with powerful new features:
+
+✅ Enhanced Privacy Controls
+• Full GDPR compliance with data export and account deletion
+• Updated privacy policy and user-friendly controls
+• Your data, your rules!
+
+✅ Better User Experience
+• Smoother performance and faster image loading
+• Fixed login and messaging issues
+• Improved notification system
+
+✅ Content Management
+• Improved content moderation system
+• Smart post cleanup for a clutter-free feed
+• Better photo management
+
+✅ Bug Fixes & Stability
+• Fixed connection and logout issues
+• Enhanced security features
+• Various UI improvements
+
+We're committed to providing you with the best social experience. Thanks for your continued support!
+
+Please update to enjoy these new features and improvements.
+
+#InstagramClone #SocialMedia #AppUpdate 
