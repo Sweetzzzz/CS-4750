@@ -92,63 +92,17 @@ Future<void> initializeApp() async {
 
 void main() async {
   try {
-    if (!isProduction) {
-      debugPrint('Starting app initialization...');
-    }
     WidgetsFlutterBinding.ensureInitialized();
-    if (!isProduction) {
-      debugPrint('Flutter binding initialized');
-    }
 
-    // Load environment variables first
-    await dotenv.load(fileName: ".env");
-    if (!isProduction) {
-      debugPrint('Environment variables loaded');
-    }
-
-    // Initialize Firebase, handling the case where it might already be initialized
-    FirebaseApp app;
-    try {
-      app = await Firebase.initializeApp(
-        options: FirebaseOptions(
-          apiKey: dotenv.env['FIREBASE_API_KEY'] ?? '',
-          authDomain: dotenv.env['FIREBASE_AUTH_DOMAIN'] ?? '',
-          projectId: dotenv.env['FIREBASE_PROJECT_ID'] ?? '',
-          storageBucket: dotenv.env['FIREBASE_STORAGE_BUCKET'] ?? '',
-          messagingSenderId: dotenv.env['FIREBASE_MESSAGING_SENDER_ID'] ?? '',
-          appId: dotenv.env['FIREBASE_APP_ID'] ?? '',
-        ),
-      );
-      if (!isProduction) {
-        debugPrint('Firebase newly initialized successfully');
-      }
-    } catch (e) {
-      if (e.toString().contains('duplicate-app')) {
-        // Firebase is already initialized, get the existing instance
-        app = Firebase.app();
-        if (!isProduction) {
-          debugPrint('Using existing Firebase app: ${app.name}');
-        }
-      } else {
-        // Some other initialization error occurred
-        rethrow;
-      }
-    }
+    // Initialize Firebase with default options for Android
+    await Firebase.initializeApp();
 
     // Initialize the rest of the app
     await initializeApp();
-    if (!isProduction) {
-      debugPrint('App initialization completed');
-    }
 
-    if (!isProduction) {
-      debugPrint('Starting app...');
-    }
     runApp(const MyApp());
   } catch (e, stackTrace) {
-    if (!isProduction) {
-      debugPrint('Error in main: $e');
-    }
+    debugPrint('Error in main: $e');
     debugPrint('Stack trace: $stackTrace');
     runApp(
       MaterialApp(

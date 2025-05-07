@@ -44,8 +44,8 @@ android {
         applicationId = "com.knewlife.social"
         minSdk = 21
         targetSdk = 34
-        versionCode = 5
-        versionName = "1.0.1"
+        versionCode = 9
+        versionName = "1.0.5"
     }
 
     buildTypes {
