@@ -1,6 +1,6 @@
-# Instagram Clone
+# KnewLife
 
-This is a Flutter-based Instagram clone with features for social media sharing, user interactions, and admin functionality.
+This is a Flutter-based Application with features for social media sharing, user interactions, and admin functionality.
 
 ## GDPR Compliance and Data Protection Features
 
