@@ -32,7 +32,6 @@ class FirebaseService {
   Future<void> initialize() async {
     if (_initialized) return;
     try {
-      // Make sure Firebase is initialized first
       if (Firebase.apps.isEmpty) {
         debugPrint(
             'FirebaseService: Firebase is not initialized, cannot proceed');
@@ -41,7 +40,6 @@ class FirebaseService {
 
       debugPrint('FirebaseService: Initializing database settings');
       try {
-        // Enable disk persistence
         FirebaseDatabase.instance.setPersistenceEnabled(true);
       } catch (e) {
         debugPrint(
@@ -49,7 +47,6 @@ class FirebaseService {
       }
 
       try {
-        // Keep user data synced
         _database.ref().child('users').keepSynced(true);
       } catch (e) {
         debugPrint(
@@ -60,7 +57,6 @@ class FirebaseService {
       debugPrint('FirebaseService: Database settings initialized');
     } catch (e) {
       debugPrint('Error initializing FirebaseService: $e');
-      // Continue without initialization if there's an error
     }
   }
 
@@ -75,7 +71,6 @@ class FirebaseService {
     try {
       debugPrint('FirebaseService: Starting cleanup');
 
-      // Cancel all tracked listeners
       for (final listener in _listeners) {
         await listener.cancel();
       }
@@ -83,7 +78,6 @@ class FirebaseService {
       debugPrint(
           'FirebaseService: Cancelled ${_listeners.length} active listeners');
 
-      // Explicitly detach listeners from common paths
       try {
         _database.ref().child('users').keepSynced(false);
         _database.ref().child('posts').keepSynced(false);
@@ -92,7 +86,6 @@ class FirebaseService {
         debugPrint('FirebaseService: Error disabling keepSynced: $e');
       }
 
-      // Clear any pending operations
       try {
         await Future.delayed(const Duration(milliseconds: 100));
         debugPrint('FirebaseService: Cleanup completed');
@@ -104,14 +97,12 @@ class FirebaseService {
     }
   }
 
-  // Add listener to tracking list
   void _trackListener(StreamSubscription listener) {
     _listeners.add(listener);
     debugPrint(
         'FirebaseService: Tracking new listener (total: ${_listeners.length})');
   }
 
-  // Helper method to create tracked listeners
   StreamSubscription<T> _createTrackedListener<T>(
     Stream<T> stream,
     void Function(T event) onData, {
@@ -129,7 +120,6 @@ class FirebaseService {
     return subscription;
   }
 
-  // Upload image to ImgBB
   Future<String> uploadImage(XFile imageFile) async {
     try {
       final apiKey = _configService.imgbbApiKey;
@@ -154,7 +144,6 @@ class FirebaseService {
     }
   }
 
-  // Upload a new post
   Future<void> uploadPost({
     required XFile imageFile,
     required String caption,
@@ -166,11 +155,10 @@ class FirebaseService {
         throw Exception('No user logged in');
       }
 
-      // Check for offensive content
       if (!_moderationService.moderatePost(
         caption: caption,
         userId: user.uid,
-        postId: 'pending', // Will be replaced with actual post ID
+        postId: 'pending', // Post ID
       )) {
         throw Exception('Post contains inappropriate content');
       }
@@ -178,11 +166,9 @@ class FirebaseService {
       print('Current user ID: ${user.uid}');
       print('Current user displayName: ${user.displayName}');
 
-      // Upload image to ImgBB
       final imageUrl = await uploadImage(imageFile);
-      print('Image uploaded successfully: $imageUrl');
+      print('Image uploaded: $imageUrl');
 
-      // Get user data from Realtime Database
       final userRef = _database.ref().child('users').child(user.uid);
       print('Checking user profile at path: users/${user.uid}');
 
@@ -193,7 +179,6 @@ class FirebaseService {
         print('Error: User profile not found in database');
         print('Creating new user profile...');
 
-        // Create user profile if it doesn't exist
         final userData = {
           'username': user.displayName ?? 'Unknown User',
           'email': user.email ?? '',
@@ -209,7 +194,6 @@ class FirebaseService {
       final userData = userSnapshot.value as Map<dynamic, dynamic>? ?? {};
       print('User data: $userData');
 
-      // Get username from user profile, fallback to displayName if not found
       final username = userData['username'] as String?;
       if (username == null || username.isEmpty) {
         print('Warning: Username not found in user profile');
@@ -240,7 +224,6 @@ class FirebaseService {
     }
   }
 
-  // Get all posts with pagination
   Future<List<DataSnapshot>> getInitialPosts({int limit = 10}) async {
     try {
       debugPrint('FirebaseService: Fetching initial posts');
@@ -250,7 +233,6 @@ class FirebaseService {
         return [];
       }
 
-      // Get posts from users you're following
       final followingSnapshot = await _database
           .ref()
           .child('users/${currentUser.uid}/following')
@@ -264,16 +246,13 @@ class FirebaseService {
             .toSet();
       }
 
-      // Add current user to following set
       followingUsers.add(currentUser.uid);
 
       debugPrint(
           'FirebaseService: Following users: ${followingUsers.toList()}');
 
-      // Get posts from following users and current user
       final posts = <DataSnapshot>[];
 
-      // First, try to get all the user's own posts
       try {
         final userPostsSnapshot = await _database
             .ref()
@@ -294,7 +273,6 @@ class FirebaseService {
         debugPrint('FirebaseService: Error fetching current user posts: $e');
       }
 
-      // Then get posts from followed users
       for (final userId
           in followingUsers.where((id) => id != currentUser.uid)) {
         try {
@@ -314,7 +292,6 @@ class FirebaseService {
         } catch (e) {
           debugPrint(
               'FirebaseService: Error fetching posts for user $userId: $e');
-          // Continue with other users
           continue;
         }
       }
@@ -339,11 +316,9 @@ class FirebaseService {
     }
   }
 
-  // Get posts stream with pagination
   Stream<DatabaseEvent> getPostsStream({int limit = 10}) {
     debugPrint('FirebaseService: Setting up posts stream');
     try {
-      // Using a more basic query to avoid Firebase view issues
       return _database
           .ref()
           .child('posts')
@@ -356,7 +331,6 @@ class FirebaseService {
     }
   }
 
-  // Get user's posts with pagination
   Future<List<DataSnapshot>> getInitialUserPosts(String userId,
       {int limit = 10}) async {
     try {
@@ -384,7 +358,6 @@ class FirebaseService {
     }
   }
 
-  // Get user's posts stream with pagination
   Stream<DatabaseEvent> getUserPostsStream(String userId, {int limit = 10}) {
     debugPrint('FirebaseService: Setting up user posts stream');
     return _database
@@ -402,7 +375,6 @@ class FirebaseService {
       final user = currentUser;
       if (user == null) throw Exception('No user logged in');
 
-      // Get post data to check if it's the user's own post
       final postSnapshot = await _database.ref().child('posts/$postId').get();
       if (!postSnapshot.exists) {
         throw Exception('Post not found');
@@ -411,12 +383,10 @@ class FirebaseService {
       final postData = postSnapshot.value as Map<dynamic, dynamic>;
       final postOwnerId = postData['userId'] as String;
 
-      // Prevent users from liking their own posts
       if (postOwnerId == user.uid) {
         throw Exception('You cannot like your own post');
       }
 
-      // Check if user already liked the post
       final likeRef = _database.ref().child('posts/$postId/likes/${user.uid}');
       final snapshot = await likeRef.get();
 
@@ -424,10 +394,8 @@ class FirebaseService {
         throw Exception('You already liked this post');
       }
 
-      // Add like
       await likeRef.set(true);
 
-      // Send notification to post owner
       await addNotification(
         recipientId: postOwnerId,
         senderId: user.uid,
@@ -441,7 +409,6 @@ class FirebaseService {
     }
   }
 
-  // Unlike a post
   Future<void> unlikePost(String postId) async {
     try {
       final user = currentUser;
@@ -454,7 +421,6 @@ class FirebaseService {
     }
   }
 
-  // Check if current user liked a post
   Future<bool> hasLikedPost(String postId) async {
     try {
       final user = currentUser;
@@ -479,12 +445,10 @@ class FirebaseService {
     }
   }
 
-  // Get user profile data
   Stream<DatabaseEvent> getUserProfile(String userId) {
     return _database.ref().child('users/$userId').onValue;
   }
 
-  // Update user profile
   Future<void> updateUserProfile({
     required String username,
     String? bio,
@@ -493,7 +457,6 @@ class FirebaseService {
       final user = currentUser;
       if (user == null) throw Exception('No user logged in');
 
-      // Update Realtime Database user document
       final updates = <String, dynamic>{
         'username': username,
       };
@@ -501,7 +464,6 @@ class FirebaseService {
 
       await _database.ref().child('users/${user.uid}').update(updates);
 
-      // Update Firebase Auth display name
       await user.updateDisplayName(username);
     } catch (e) {
       print('Error updating user profile: $e');
@@ -509,7 +471,6 @@ class FirebaseService {
     }
   }
 
-  // Update user profile picture
   Future<void> updateProfilePicture(XFile imageFile) async {
     try {
       final user = currentUser;
@@ -517,20 +478,16 @@ class FirebaseService {
         throw Exception('No user logged in');
       }
 
-      // Upload image to ImgBB
       final imageUrl = await uploadImage(imageFile);
       print('Profile picture uploaded successfully: $imageUrl');
 
-      // Update user profile in Realtime Database
       await _database
           .ref()
           .child('users/${user.uid}/profileImageUrl')
           .set(imageUrl);
 
-      // Update Firebase Auth photoURL
       await user.updatePhotoURL(imageUrl);
 
-      // Update profile image in all user's posts
       final postsSnapshot = await _database
           .ref()
           .child('posts')
@@ -553,7 +510,6 @@ class FirebaseService {
     }
   }
 
-  // Follow a user
   Future<void> followUser(String userId) async {
     try {
       final currentUserId = currentUser?.uid;
@@ -581,7 +537,6 @@ class FirebaseService {
     }
   }
 
-  // Unfollow a user
   Future<void> unfollowUser(String userId) async {
     try {
       final currentUserId = currentUser?.uid;
@@ -601,17 +556,14 @@ class FirebaseService {
     }
   }
 
-  // Get followers count
   Stream<DatabaseEvent> getFollowersCount(String userId) {
     return _database.ref().child('users/$userId/followers').onValue;
   }
 
-  // Get following count
   Stream<DatabaseEvent> getFollowingCount(String userId) {
     return _database.ref().child('users/$userId/following').onValue;
   }
 
-  // Check if current user is following another user
   Future<bool> isFollowing(String userId) async {
     try {
       final currentUserId = currentUser?.uid;
@@ -628,17 +580,15 @@ class FirebaseService {
     }
   }
 
-  // Add a comment to a post
   Future<void> addComment(String postId, String text) async {
     try {
       final user = currentUser;
       if (user == null) throw Exception('No user logged in');
 
-      // Check for offensive content
       if (!_moderationService.moderateComment(
         text: text,
         userId: user.uid,
-        commentId: 'pending', // Will be replaced with actual comment ID
+        commentId: 'pending',
       )) {
         throw Exception('Comment contains inappropriate content');
       }
@@ -655,13 +605,11 @@ class FirebaseService {
         'timestamp': ServerValue.timestamp,
       });
 
-      // Get post owner to send notification
       final postSnapshot = await _database.ref().child('posts/$postId').get();
       if (postSnapshot.exists) {
         final postData = postSnapshot.value as Map<dynamic, dynamic>;
         final postOwnerId = postData['userId'] as String;
 
-        // Don't notify yourself
         if (postOwnerId != user.uid) {
           await addNotification(
             recipientId: postOwnerId,
@@ -678,7 +626,6 @@ class FirebaseService {
     }
   }
 
-  // Get comments for a post
   Stream<DatabaseEvent> getComments(String postId) {
     return _database
         .ref()
@@ -687,7 +634,6 @@ class FirebaseService {
         .onValue;
   }
 
-  // Delete a comment
   Future<void> deleteComment(String postId, String commentId) async {
     try {
       final user = currentUser;
@@ -711,7 +657,6 @@ class FirebaseService {
     }
   }
 
-  // Add a notification
   Future<void> addNotification({
     required String recipientId,
     required String senderId,
@@ -720,7 +665,6 @@ class FirebaseService {
     String? postId,
   }) async {
     try {
-      // Get sender user details
       final senderSnapshot =
           await _database.ref().child('users/$senderId').get();
       if (!senderSnapshot.exists) return;
@@ -729,7 +673,6 @@ class FirebaseService {
       final senderName = senderData['username'] as String? ?? 'Unknown User';
       final senderImage = senderData['profileImageUrl'] as String? ?? '';
 
-      // Create notification
       final notificationRef =
           _database.ref().child('users/$recipientId/notifications').push();
 
@@ -791,19 +734,15 @@ class FirebaseService {
     }
   }
 
-  // Utility to anonymize username
   String anonymizeUsername(String username, String userId) {
-    // If this is the current user, show real username
     if (userId == currentUser?.uid) {
       return username;
     }
 
-    // Otherwise create an anonymous name using a hash of the userId
     final hash = userId.hashCode.abs().toString().substring(0, 6);
     return "User_$hash";
   }
 
-  // Get current monthly theme
   Future<Map<String, dynamic>> getCurrentMonthlyTheme() async {
     try {
       final now = DateTime.now();
@@ -829,7 +768,6 @@ class FirebaseService {
     }
   }
 
-  // Create a default monthly theme in Firebase
   Future<void> _createDefaultMonthlyTheme(String monthYear) async {
     try {
       final now = DateTime.now();
@@ -847,7 +785,6 @@ class FirebaseService {
     }
   }
 
-  // Get default theme data
   Map<String, dynamic> _getDefaultTheme() {
     final now = DateTime.now();
     return {
@@ -858,7 +795,6 @@ class FirebaseService {
     };
   }
 
-  // Get top posts for current month (leaderboard)
   Future<List<Post>> getMonthlyLeaderboard({int limit = 10}) async {
     try {
       final now = DateTime.now();
@@ -882,7 +818,6 @@ class FirebaseService {
           try {
             final post =
                 Post.fromMap(child.key!, child.value as Map<dynamic, dynamic>);
-            // Double check the timestamp is within the current month
             if (post.timestamp.isAfter(startOfMonth) &&
                 post.timestamp.isBefore(endOfMonth)) {
               posts.add(post);
@@ -900,8 +835,6 @@ class FirebaseService {
       return [];
     }
   }
-
-  // Filter out posts older than 30 days
   Future<void> cleanupOldPosts() async {
     try {
       final now = DateTime.now();
@@ -924,8 +857,6 @@ class FirebaseService {
       debugPrint('Error cleaning up old posts: $e');
     }
   }
-
-  // Set a custom monthly theme (admin function)
   Future<bool> setMonthlyTheme({
     required String theme,
     required String description,
@@ -962,16 +893,13 @@ class FirebaseService {
       final user = currentUser;
       if (user == null) throw Exception('No user logged in');
 
-      // Check for offensive content
       if (!_moderationService.moderateMessage(
         text: text,
         userId: user.uid,
-        messageId: 'pending', // Will be replaced with actual message ID
+        messageId: 'pending', // Message ID
       )) {
         throw Exception('Message contains inappropriate content');
       }
-
-      // ... rest of the existing sendMessage code ...
     } catch (e) {
       print('Error sending message: $e');
       rethrow;
@@ -981,14 +909,8 @@ class FirebaseService {
   Future<void> signOut() async {
     try {
       debugPrint('FirebaseService: Starting sign-out process');
-
-      // Cancel all active listeners first
       await cleanup();
-
-      // Then sign out
       await _auth.signOut();
-
-      // Reset initialization flag
       _initialized = false;
 
       debugPrint('FirebaseService: Sign-out completed successfully');
@@ -997,8 +919,6 @@ class FirebaseService {
       rethrow;
     }
   }
-
-  // GDPR Data Export - Get all user data for export
   Future<Map<String, dynamic>> getUserDataExport() async {
     try {
       final user = currentUser;
@@ -1007,15 +927,11 @@ class FirebaseService {
       debugPrint('FirebaseService: Starting data export for user: ${user.uid}');
 
       final userData = <String, dynamic>{};
-
-      // 1. Get user profile
       final userSnapshot =
           await _database.ref().child('users/${user.uid}').get();
       if (userSnapshot.exists) {
         userData['profile'] = userSnapshot.value;
       }
-
-      // 2. Get user posts
       final postsSnapshot = await _database
           .ref()
           .child('posts')
@@ -1030,11 +946,8 @@ class FirebaseService {
         }
         userData['posts'] = posts;
       }
-
-      // 3. Get user comments
       userData['comments'] = await _getUserComments(user.uid);
-
-      // 4. Get following/followers
+      
       final followingSnapshot =
           await _database.ref().child('users/${user.uid}/following').get();
       if (followingSnapshot.exists) {
@@ -1047,10 +960,8 @@ class FirebaseService {
         userData['followers'] = followersSnapshot.value;
       }
 
-      // 5. Get messages
       userData['messages'] = await _getUserMessages(user.uid);
 
-      // 6. Metadata about the export
       userData['exportMetadata'] = {
         'exportDate': DateTime.now().toIso8601String(),
         'userId': user.uid,
@@ -1066,16 +977,13 @@ class FirebaseService {
     }
   }
 
-  // Helper to get user comments across all posts
   Future<Map<String, dynamic>> _getUserComments(String userId) async {
     try {
       final comments = <String, dynamic>{};
 
-      // Get all posts
       final postsSnapshot = await _database.ref().child('posts').get();
       if (!postsSnapshot.exists) return comments;
 
-      // Go through each post's comments to find user's comments
       for (final postSnapshot in postsSnapshot.children) {
         final postId = postSnapshot.key!;
         final commentsSnapshot =
@@ -1099,17 +1007,14 @@ class FirebaseService {
     }
   }
 
-  // Helper to get user messages
   Future<Map<String, dynamic>> _getUserMessages(String userId) async {
     try {
       final messages = <String, dynamic>{};
 
-      // Get conversations involving the user
       final conversationsSnapshot =
           await _database.ref().child('messages').get();
       if (!conversationsSnapshot.exists) return messages;
 
-      // Find conversations where the user is a participant
       for (final conversationSnapshot in conversationsSnapshot.children) {
         final conversationId = conversationSnapshot.key!;
         final conversationData =
@@ -1119,7 +1024,6 @@ class FirebaseService {
           final participants =
               conversationData['participants'] as Map<dynamic, dynamic>;
 
-          // Check if user is a participant
           if (participants.containsValue(userId)) {
             messages[conversationId] = conversationData;
           }
@@ -1133,7 +1037,6 @@ class FirebaseService {
     }
   }
 
-  // GDPR Account Deletion - Delete user account and all associated data
   Future<void> deleteUserAccount() async {
     try {
       final user = currentUser;
@@ -1142,22 +1045,11 @@ class FirebaseService {
       debugPrint(
           'FirebaseService: Starting account deletion for user: ${user.uid}');
 
-      // 1. Delete user's posts and their comments
       await _deleteUserPosts(user.uid);
-
-      // 2. Delete user's comments on other posts
       await _deleteUserComments(user.uid);
-
-      // 3. Delete following/followers relationships
       await _deleteUserRelationships(user.uid);
-
-      // 4. Delete user's messages
       await _deleteUserMessages(user.uid);
-
-      // 5. Delete user's profile
       await _database.ref().child('users/${user.uid}').remove();
-
-      // 6. Delete Firebase Auth account
       await user.delete();
 
       debugPrint(
@@ -1168,10 +1060,8 @@ class FirebaseService {
     }
   }
 
-  // Helper to delete user's posts
   Future<void> _deleteUserPosts(String userId) async {
     try {
-      // Get all posts by user
       final postsSnapshot = await _database
           .ref()
           .child('posts')
@@ -1181,7 +1071,6 @@ class FirebaseService {
 
       if (!postsSnapshot.exists) return;
 
-      // Delete each post
       for (final postSnapshot in postsSnapshot.children) {
         await _database.ref().child('posts/${postSnapshot.key}').remove();
       }
@@ -1190,14 +1079,11 @@ class FirebaseService {
     }
   }
 
-  // Helper to delete user's comments on other posts
   Future<void> _deleteUserComments(String userId) async {
     try {
-      // Get all posts
       final postsSnapshot = await _database.ref().child('posts').get();
       if (!postsSnapshot.exists) return;
 
-      // Go through each post's comments to find and delete user's comments
       for (final postSnapshot in postsSnapshot.children) {
         final postId = postSnapshot.key!;
         final commentsSnapshot =
@@ -1220,7 +1106,6 @@ class FirebaseService {
     }
   }
 
-  // Helper to delete following/followers relationships
   Future<void> _deleteUserRelationships(String userId) async {
     try {
       // Remove user from others' following lists
@@ -1232,7 +1117,6 @@ class FirebaseService {
           // Skip self
           if (otherUserId == userId) continue;
 
-          // Remove from following
           await _database
               .ref()
               .child('users/$otherUserId/following/$userId')
@@ -1250,15 +1134,12 @@ class FirebaseService {
     }
   }
 
-  // Helper to delete user's messages
   Future<void> _deleteUserMessages(String userId) async {
     try {
-      // Get all conversations
       final conversationsSnapshot =
           await _database.ref().child('messages').get();
       if (!conversationsSnapshot.exists) return;
 
-      // Find and delete conversations where the user is a participant
       for (final conversationSnapshot in conversationsSnapshot.children) {
         final conversationId = conversationSnapshot.key!;
         final conversationData =
@@ -1268,7 +1149,6 @@ class FirebaseService {
           final participants =
               conversationData['participants'] as Map<dynamic, dynamic>;
 
-          // Check if user is a participant
           if (participants.containsValue(userId)) {
             await _database.ref().child('messages/$conversationId').remove();
           }
