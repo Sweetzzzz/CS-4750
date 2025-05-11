@@ -30,7 +30,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     try {
       final userId = _firebaseService.currentUser!.uid;
 
-      // First, get users the current user is already following
       final followingSnapshot = await _firebaseService.database
           .child('users/$userId/following')
           .get();
@@ -41,7 +40,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         _followingUsers.addAll(followingData.keys.cast<String>());
       }
 
-      // Then, get all users
+  
       final usersSnapshot =
           await _firebaseService.database.child('users').get();
 
@@ -55,7 +54,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           final userData = entry.value as Map<dynamic, dynamic>;
 
           if (otherUserId != userId && !_followingUsers.contains(otherUserId)) {
-            // Get follower count for popularity
             int followerCount = 0;
             final followersSnapshot = await _firebaseService.database
                 .child('users/$otherUserId/followers')
@@ -66,7 +64,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   (followersSnapshot.value as Map<dynamic, dynamic>).length;
             }
 
-            // Get post count for activity
             int postCount = 0;
             final postsSnapshot = await _firebaseService.database
                 .child('posts')
@@ -86,7 +83,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               'followerCount': followerCount,
               'postCount': postCount,
               'score': followerCount * 2 +
-                  postCount, // Simple scoring for recommendations
+                  postCount, 
             });
           }
         }
@@ -176,7 +173,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       String title, List<Map<String, dynamic>> users) {
     if (users.isEmpty) return [];
 
-    // Limit to 5 users per section
+ 
     final displayUsers = users.take(5).toList();
 
     return [
@@ -286,19 +283,18 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   }
 }
 
-// A separate discover tab for trends and hashtags
+
 class TrendsSection extends StatelessWidget {
   const TrendsSection({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Simulate trending hashtags
     final trending = [
-      {'tag': '#photography', 'count': '2.5M posts'},
-      {'tag': '#nature', 'count': '1.8M posts'},
-      {'tag': '#travel', 'count': '3.2M posts'},
-      {'tag': '#food', 'count': '4.1M posts'},
-      {'tag': '#fitness', 'count': '2.9M posts'},
+      {'tag': '#photography', 'count': '0 Posts'},
+      {'tag': '#nature', 'count': '1 posts'},
+      {'tag': '#travel', 'count': '0 posts'},
+      {'tag': '#food', 'count': '0 posts'},
+      {'tag': '#fitness', 'count': '0 posts'},
     ];
 
     return Column(
@@ -327,7 +323,6 @@ class TrendsSection extends StatelessWidget {
               subtitle: Text(trending[index]['count']!),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               onTap: () {
-                // Navigate to hashtag results
               },
             );
           },
