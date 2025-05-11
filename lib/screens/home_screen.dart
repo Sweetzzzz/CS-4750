@@ -22,7 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Post> _posts = [];
   List<Post> _allPosts = [];
   bool _isLoading = true;
-  bool _debugShowAllPosts = false; // Set to false to enforce privacy
+  bool _debugShowAllPosts = false; 
   StreamSubscription? _followingSubscription;
   StreamSubscription? _postsSubscription;
 
@@ -44,15 +44,9 @@ class _HomeScreenState extends State<HomeScreen> {
         return;
       }
 
-      debugPrint('HomeScreen: current user ID: ${currentUser.uid}');
 
-      // Add a short delay to ensure Firebase is ready
       await Future.delayed(const Duration(milliseconds: 500));
 
-      // Load initial data without streams first
-      debugPrint('HomeScreen: loading initial data');
-
-      // Get initial posts first
       List<DataSnapshot> posts = [];
       try {
         posts = await _firebaseService.getInitialPosts(limit: 20);
@@ -100,7 +94,6 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
 
-      // Then get following data
       Map<dynamic, dynamic>? followingData;
       try {
         final followingSnapshot = await _firebaseService.database
@@ -112,7 +105,6 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       } catch (e) {
         debugPrint('HomeScreen: Error loading following data: $e');
-        // Try again with a delay
         await Future.delayed(const Duration(seconds: 1));
         try {
           final followingSnapshot = await _firebaseService.database
@@ -145,11 +137,8 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() => _isLoading = false);
       }
 
-      // Add a short delay to ensure Firebase is ready before setting up listeners
       await Future.delayed(const Duration(milliseconds: 500));
 
-      // Now set up listeners for real-time updates
-      debugPrint('HomeScreen: setting up listeners');
       _setupListeners(currentUser.uid);
     } catch (e, stack) {
       debugPrint('HomeScreen: Error during initialization: $e');
@@ -162,11 +151,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _setupListeners(String userId) {
     try {
-      // Cancel existing listeners to prevent duplicates
       _followingSubscription?.cancel();
       _postsSubscription?.cancel();
 
-      // Set up following listener
       _followingSubscription = _firebaseService.database
           .child('users/$userId/following')
           .onValue
@@ -182,7 +169,6 @@ class _HomeScreenState extends State<HomeScreen> {
               .toSet();
         }
 
-        // Check if following list has changed
         bool followingChanged =
             newFollowingUsers.length != _followingUsers.length ||
                 !newFollowingUsers
@@ -194,8 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
               'HomeScreen: Previous following count: ${_followingUsers.length}');
           debugPrint(
               'HomeScreen: New following count: ${newFollowingUsers.length}');
-
-          // Calculate differences
+          
           Set<String> unfollowedUsers =
               _followingUsers.difference(newFollowingUsers);
           Set<String> newlyFollowedUsers =
@@ -214,18 +199,16 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {
             _followingUsers = newFollowingUsers;
 
-            // Immediately filter out posts from unfollowed users
             if (unfollowedUsers.isNotEmpty) {
               _posts = _posts
                   .where((post) =>
-                          post.userId == userId || // Keep own posts
+                          post.userId == userId || 
                           !unfollowedUsers.contains(
                               post.userId) // Remove unfollowed users' posts
                       )
                   .toList();
             }
 
-            // Re-filter all posts to be safe
             _filterPosts();
           });
         }
@@ -233,7 +216,6 @@ class _HomeScreenState extends State<HomeScreen> {
         debugPrint('HomeScreen: Error in following listener: $error');
       });
 
-      // Set up posts listener with pagination - wrapped in try-catch
       try {
         _postsSubscription =
             _firebaseService.getPostsStream(limit: 20).listen((event) {
@@ -300,13 +282,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() {
       if (_debugShowAllPosts) {
-        // Debug mode: show all posts
         _posts = List.from(_allPosts)
           ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
         debugPrint(
             'DEBUG MODE: Showing all ${_posts.length} posts without filtering');
       } else {
-        // Normal mode: filter posts
         _posts = _allPosts.where((post) {
           final isOwnPost = post.userId == currentUser.uid;
           final isFollowingPost = _followingUsers.contains(post.userId);
@@ -324,11 +304,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
       debugPrint('Total filtered posts: ${_posts.length}');
 
-      // Log all filtered posts for debugging
-      for (var post in _posts) {
-        debugPrint(
-            'Filtered post - ID: ${post.id}, UserID: ${post.userId}, Username: ${post.username}, Timestamp: ${post.timestamp}');
-      }
     });
   }
 
@@ -474,7 +449,6 @@ class _PostCardState extends State<PostCard> {
     debugPrint('PostCard: Post ImageURL: ${widget.post.imageUrl}');
     debugPrint('PostCard: Post Timestamp: ${widget.post.timestamp}');
 
-    // Use anonymized username
     _displayUsername = _firebaseService.anonymizeUsername(
         widget.post.username, widget.post.userId);
 
@@ -482,10 +456,8 @@ class _PostCardState extends State<PostCard> {
   }
 
   Future<void> _initializeData() async {
-    // Load initial like status
     _isLiked = await _firebaseService.hasLikedPost(widget.post.id);
 
-    // Subscribe to likes count
     _likeSubscription = _firebaseService.database
         .child('posts/${widget.post.id}/likes')
         .onValue
@@ -498,7 +470,6 @@ class _PostCardState extends State<PostCard> {
       }
     });
 
-    // Subscribe to comments
     _commentsSubscription =
         _firebaseService.getComments(widget.post.id).listen((event) {
       if (mounted) {
