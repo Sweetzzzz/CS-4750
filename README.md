@@ -1,52 +1,55 @@
 # KnewLife
 
-This is a Flutter-based Application with features for social media sharing, user interactions, and admin functionality.
+KnewLife is an anonymous social media application built with Flutter. It focuses on the joys of creating new themed posts each month. Users can post, comment, and interact without revealing their identities. Posts are automatically deleted after 30 days, and the app introduces new visual themes every month to keep the experience fresh.
 
-## GDPR Compliance and Data Protection Features
+## Features
+- Create and share anonymous posts
+- Comment on posts without revealing identity
+- Follow other anonymous profiles
+- Automatically deleted posts after 30 days
+- Monthly generated app-wide themes
+- Direct messaging between users
+- Discover page for trending and themed content
 
-### Account Data Export (GDPR Compliance)
-The app allows users to export all their personal data, as required by GDPR:
-- User profile information
-- Posts and media content
-- Comments on posts
-- Following/follower relationships
-- Messages and conversations
-- Export data is provided in a structured JSON format
+## Getting Started
+### Prerequisites
+- Flutter SDK (version 3.x or higher)
+- Dart SDK
+- Android Studio or Xcode for device simulation
 
-### Account Deletion (Right to be Forgotten)
-Users can completely delete their account and all associated data:
-- Double confirmation process to prevent accidental deletion
-- Complete removal of profile information
-- Deletion of all user's posts and their comments
-- Removal of comments made on other users' posts
-- Deletion of following/follower relationships
-- Removal of messaging history
-- Termination of Firebase Auth account
 
-### Privacy Controls
-- Privacy Policy accessible in the app
-- User data handling transparency
-- Future: Data processing consent management
+## Installation
+1. Clone the Repo
+```
+git clone https://github.com/Sweetzzzz/CS-4750.git
+cd CS-4750
+```
+2. Install dependencies:
+```
+flutter pub get
+```
+3. Run the app: 
+```
+flutter run
+```
+## Project Structure 
+```
+lib/
+├── models/
+├── screens/
+├── services/
+├── themes/
+├── widgets/
+└── main.dart
+```
+## Tech Stack
+- Frontend: Flutter (Dart)
+- Authentication: Anonymous sign-in (Firebase Auth)
+- Backend: Firebase 
+- Database: Realtime Database
 
-## Firebase Security Rules
+## License
+This project is licensed under the MIT License.
 
-To support these features, Firebase security rules have been updated to:
-- Allow users to delete their own data
-- Provide appropriate public access to non-sensitive information
-- Restrict sensitive operations to authenticated users
-- Allow admin users to manage content
-
-## Usage
-
-### Data Export
-1. Navigate to Settings
-2. Select "Export Your Data" under Privacy & Data
-3. View or download your data
-
-### Account Deletion
-1. Navigate to Settings
-2. Select "Delete Account" under Account
-3. Confirm deletion in first dialog
-4. Type "DELETE" in second confirmation dialog
-
-Note: Account deletion is permanent and cannot be undone.
+## Contact
+For questions or suggestions, please contact jacobxlembach@gmail.com
